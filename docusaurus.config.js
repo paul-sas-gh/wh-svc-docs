@@ -91,10 +91,23 @@ const config = {
         items: [
           {
             type: 'docSidebar',
+            sidebarId: 'planSidebar',
+            position: 'left',
+            label: 'Plan de proiect',
+          },
+          {
+            type: 'docSidebar',
+            sidebarId: 'tehnicaSidebar',
+            position: 'left',
+            label: 'Documentatie tehnica',
+          },
+          {
+            type: 'docSidebar',
             sidebarId: 'tutorialSidebar',
             position: 'left',
             label: 'Tutorial',
           },
+          
           {to: '/blog', label: 'Blog', position: 'left'},
           {
             href: 'https://github.com/facebook/docusaurus',
