@@ -15,6 +15,10 @@
   --ifm-color-primary-lightest: #3cad6e;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  /* Override default container max-width */
+  --ifm-container-width: 100%;
+  --ifm-container-width-xl: 100%;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -28,3 +32,27 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* Make page container use full available width */
+.container {
+  max-width: 100% !important;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+/* Adjust main wrapper for full width */
+.main-wrapper {
+  max-width: 100%;
+}
+
+/* Make doc content use full width */
+.theme-doc-markdown,
+.markdown {
+  max-width: 100%;
+}
+
+/* Optionally adjust content container */
+.docMainContainer_node_modules-\@docusaurus-theme-classic-lib-theme-DocPage-Layout-Main-styles-module {
+  max-width: 100%;
+}
+

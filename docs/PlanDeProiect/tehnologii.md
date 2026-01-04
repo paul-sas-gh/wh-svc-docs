@@ -1,6 +1,7 @@
 ---
 id: tehnologii
 title: Tehnologii Proiectate
+sidebar_position: 2
 ---
 
 Lista și rolul principal al tehnologiilor:

@@ -2,6 +2,7 @@
 id: componente-sistem
 slug: /DocumentatieTehnica/Componente sistem/
 title: Componente sistem
+sidebar_position: 1
 ---
 
 # Componente sistem
@@ -17,4 +18,4 @@ Această secțiune conține descrierea fiecărei componente din arhitectura Secu
 - [PostgreSQL](postgresql.md)
 - [Redis](redis.md)
 - [Subscriber Endpoint](subscriber-endpoint.md)
-- [Security Service](../SecurityService/security-service.md)
+- [Security Service](SecurityService/security-service.md)

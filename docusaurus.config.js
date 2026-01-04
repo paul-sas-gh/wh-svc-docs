@@ -40,6 +40,12 @@ const config = {
     locales: ['en'],
   },
 
+  markdown: {
+    mermaid: true,
+  },
+
+  themes: ['@docusaurus/theme-mermaid'],
+
   presets: [
     [
       'classic',
@@ -165,7 +171,8 @@ const config = {
         theme: prismThemes.github,
         darkTheme: prismThemes.dracula,
       },
+      mermaid: {
+        theme: { light: 'neutral', dark: 'dark' },
+      },
     }),
-};
-
-export default config;
+};export default config;

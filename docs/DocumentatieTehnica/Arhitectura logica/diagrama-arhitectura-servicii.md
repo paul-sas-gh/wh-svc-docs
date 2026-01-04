@@ -1,8 +1,6 @@
-import MermaidDiagram from '@site/src/components/MermaidDiagram';
-
 # Diagrama arhitectură servicii
 
-<MermaidDiagram chart={`
+```mermaid
 flowchart LR
     GW[API Gateway]
     WM[Webhook Management Service]
@@ -26,6 +24,6 @@ flowchart LR
     WM --> REDIS
     EI --> REDIS
     GW --> REDIS
-`} />
+```
 
 > Diagrama prezintă fluxul principal între componentele arhitecturii logice pentru Secure WebHooks.
