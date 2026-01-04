@@ -228,7 +228,7 @@ sequenceDiagram
     *   ✅ Tabel `clients` creat în PostgreSQL cu 7 coloane
     *   ✅ Indecși de performanță adăugați (status, created_at)
     *   ✅ Migrare executată cu succes
-    *   📄 Documentație: `wh-svc-manager/IMPLEMENTATION-STEP2-DATABASE-SCHEMA.md`
+    *   📄 Documentație: `wh-svc-docs/docs/DocumentatieTehnica/Rapoarte de implementare/Workflows/Inrolare Client - Schimb de chei/IMPLEMENTATION-STEP2-DATABASE-SCHEMA.md`
 3.  **Security Service - endpoint-uri criptografice**: ✅ **VALIDAT** (4 ian 2026)
     *   ✅ Endpoint `POST /decrypt` funcțional
         *   Request: `{encryptedData, privateKey}`
@@ -241,23 +241,53 @@ sequenceDiagram
     *   ✅ Validări pentru format chei și date implementate
     *   ✅ Tratare erori criptografice (InvalidKeyException, BadPaddingException)
     *   ✅ Teste end-to-end executate cu succes
-    *   📄 Documentație: `wh-svc-security/VALIDATION-STEP3-CRYPTO-ENDPOINTS.md`
-4.  **Webhook Management Service - Configurare conexiune DB**: 🔄 **ÎN PROGRES** (4 ian 2026)
-    *   ✅ Adăugare dependențe în `pom.xml`: PostgreSQL driver, Spring Data JPA (COMPLETAT)
-    *   ✅ Configurare `application.properties` pentru conexiunea la PostgreSQL (COMPLETAT)
-    *   🔄 Creare test DatabaseConnectionTest pentru validare conexiune
-    *   🔄 Validare finală conexiune și connection pool
-5.  **Webhook Management Service - Domain**: 🔄 **ÎN PROGRES** (4 ian 2026)
-    *   🔄 Actualizare entitate `Client` (JPA entity) cu câmpuri criptografice
-    *   🔄 Creare teste unitare pentru entitate
-    *   🔄 Creare teste de persistență JPA
-6.  **Webhook Management Service - Adapters**:
-    *   Implementare `ClientRepository` (JPA).
-    *   Implementare `TemporaryKeyRepository` (Redis) - metoda `findById`.
-    *   Implementare `SecurityServiceClient` (Feign) - metode:
-        *   `generateKeyPair()`
-        *   `decrypt(encryptedData, privateKey)`
-        *   `encrypt(data, publicKey)`
+    *   📄 Documentație: `wh-svc-docs/docs/DocumentatieTehnica/Rapoarte de implementare/Workflows/Inrolare Client - Schimb de chei/VALIDATION-STEP3-CRYPTO-ENDPOINTS.md`
+4.  **Webhook Management Service - Configurare conexiune DB**: ✅ **COMPLETAT** (4 ian 2026)
+    *   ✅ Adăugare dependențe în `pom.xml`: PostgreSQL driver, Spring Data JPA
+    *   ✅ Configurare `application.properties` pentru conexiunea la PostgreSQL
+    *   ✅ Creare test DatabaseConnectionTest pentru validare conexiune
+    *   ✅ Validare finală conexiune și connection pool
+    *   ✅ Toate teste passed (4/4): conexiune DB, JdbcTemplate, tabel clients, Flyway migration
+    *   📄 Documentație: `wh-svc-docs/docs/DocumentatieTehnica/Rapoarte de implementare/Workflows/Inrolare Client - Schimb de chei/IMPLEMENTATION-STEPS-4-5-SUMMARY.md`
+5.  **Webhook Management Service - Domain**: ✅ **COMPLETAT** (4 ian 2026)
+    *   ✅ Actualizare entitate `Client` (JPA entity) cu câmpuri criptografice
+    *   ✅ Adăugare annotări JPA (@Entity, @Table, @Id, @Column)
+    *   ✅ Adăugare câmpuri: clientPublicKey, systemPrivateKey, systemPublicKey
+    *   ✅ Implementare lifecycle hooks (@PrePersist, @PreUpdate)
+    *   ✅ Creare factory method createEnrolled() și metode business
+    *   ✅ Creare teste unitare pentru entitate (ClientTest.java - 6 tests)
+    *   ✅ Creare teste de persistență JPA (ClientPersistenceTest.java - 5 tests)
+    *   ✅ Fix compilation errors în InMemoryClientRepository
+    *   ✅ Fix test timing issue în testSuspend()
+    *   📄 Documentație: `wh-svc-docs/docs/DocumentatieTehnica/Rapoarte de implementare/Workflows/Inrolare Client - Schimb de chei/IMPLEMENTATION-STEPS-4-5-SUMMARY.md`
+6.  **Webhook Management Service - Adapters**: ✅ **COMPLETAT** (4 ian 2026)
+    *   ✅ **SecurityServiceFeignClient** actualizat:
+        *   Adăugate metode `decrypt()` și `encrypt()`
+        *   Create DTOs: DecryptRequest/Response, EncryptRequest/Response
+        *   Renamed SecurityServiceResponse → KeypairResponse
+    *   ✅ **SecurityServiceAdapter** extins:
+        *   Implementată metodă `decrypt(encryptedData, privateKey)` → decryptedData
+        *   Implementată metodă `encrypt(data, publicKey)` → encryptedData
+        *   Logging complet și exception handling
+    *   ✅ **TemporaryKeyRepository** port interface creat:
+        *   Metodă `findById(UUID clientId)` → Optional&lt;TemporaryKeyData&gt;
+        *   Metodă `deleteById(UUID clientId)` → void (cleanup după înrolare)
+        *   Record TemporaryKeyData(publicKey, privateKey)
+    *   ✅ **RedisKeypairRepository** implementat:
+        *   Adapter pentru recuperare chei temporare din Redis
+        *   Key format: `keypair:{clientId}`, TTL 5 minute
+        *   Handling erori și logging complet
+    *   ✅ **SpringDataClientRepository** interface creat:
+        *   Extends JpaRepository&lt;Client, UUID&gt;
+        *   Metode CRUD automate pentru Client entity
+    *   ✅ **JpaClientRepositoryAdapter** implementat:
+        *   Adapter JPA pentru persistență PostgreSQL
+        *   @Primary și @ConditionalOnProperty(client.repository.type=jpa)
+        *   Delegare către SpringDataClientRepository
+    *   ✅ **InMemoryClientRepository** actualizat:
+        *   Adăugat @ConditionalOnProperty(client.repository.type=in-memory)
+        *   Activare condițională pentru teste
+    *   📄 Documentație: Toate fișierele create și compilare cu succes
 7.  **Webhook Management Service - Application**:
     *   Implementare `ClientEnrollmentService`.
     *   Logica: 
