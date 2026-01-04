@@ -1,3 +1,6 @@
+---
+sidebar_position: 1
+---
 # Implementare Pas 1: PostgreSQL Container
 
 ## Status: ✅ IMPLEMENTAT
