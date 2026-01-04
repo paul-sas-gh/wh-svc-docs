@@ -242,24 +242,15 @@ sequenceDiagram
     *   ✅ Tratare erori criptografice (InvalidKeyException, BadPaddingException)
     *   ✅ Teste end-to-end executate cu succes
     *   📄 Documentație: `wh-svc-security/VALIDATION-STEP3-CRYPTO-ENDPOINTS.md`
-4.  **Webhook Management Service - Configurare conexiune DB**:
-    *   Adăugare dependențe în `pom.xml`: PostgreSQL driver, Spring Data JPA.
-    *   Configurare `application.yml` pentru conexiunea la PostgreSQL:
-        ```yaml
-        spring:
-          datasource:
-            url: jdbc:postgresql://wh-postgres:5432/webhooks
-            username: webhooks_user
-            password: webhooks_pass
-          jpa:
-            hibernate:
-              ddl-auto: validate
-            properties:
-              hibernate:
-                dialect: org.hibernate.dialect.PostgreSQLDialect
-        ```
-5.  **Webhook Management Service - Domain**:
-    *   Definire entitate `Client` (JPA entity).
+4.  **Webhook Management Service - Configurare conexiune DB**: 🔄 **ÎN PROGRES** (4 ian 2026)
+    *   ✅ Adăugare dependențe în `pom.xml`: PostgreSQL driver, Spring Data JPA (COMPLETAT)
+    *   ✅ Configurare `application.properties` pentru conexiunea la PostgreSQL (COMPLETAT)
+    *   🔄 Creare test DatabaseConnectionTest pentru validare conexiune
+    *   🔄 Validare finală conexiune și connection pool
+5.  **Webhook Management Service - Domain**: 🔄 **ÎN PROGRES** (4 ian 2026)
+    *   🔄 Actualizare entitate `Client` (JPA entity) cu câmpuri criptografice
+    *   🔄 Creare teste unitare pentru entitate
+    *   🔄 Creare teste de persistență JPA
 6.  **Webhook Management Service - Adapters**:
     *   Implementare `ClientRepository` (JPA).
     *   Implementare `TemporaryKeyRepository` (Redis) - metoda `findById`.
