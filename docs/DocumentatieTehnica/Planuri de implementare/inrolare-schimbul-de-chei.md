@@ -303,8 +303,34 @@ sequenceDiagram
     *   Creare DTO-uri (`CompleteEnrollmentRequest`, `CompleteEnrollmentResponse`).
     *   Implementare controller `ClientEnrollmentController` cu endpoint-ul `/enroll/complete`.
     *   Documentație OpenAPI, validare input și răspunsuri de eroare consistente.
-9.  **API Gateway**:
-    *   Configurare rută în `application.yml` pentru `/set-client-public-key`.
+9.  **API Gateway**: ✅ **COMPLETAT** (6 ian 2026)
+    *   ✅ Configurare rute în `GatewayRoutesConfig.java`:
+        *   Route pentru `GET /register` → Manager service (localhost:8082)
+        *   Route pentru `POST /enroll/complete` → Manager service (localhost:8082)
+    *   ✅ Implementare `SecurityConfig.java`:
+        *   Permit public access pentru `/register` și `/enroll/**`
+        *   Disable basic auth pentru enrollment endpoints
+    *   ✅ Actualizare `FallbackController.java`:
+        *   Adăugat `/fallback/register` endpoint
+        *   Adăugat `/fallback/enroll` endpoint
+        *   User-friendly error messages (HTTP 503)
+    *   ✅ Configurare Circuit Breaker:
+        *   Fallback URIs: `forward:/fallback/register`, `forward:/fallback/enroll`
+        *   Circuit breaker name: `managerCircuitBreaker`
+    *   ✅ Configurare Retry Logic:
+        *   2 retries cu exponential backoff (50ms-500ms)
+        *   Retry pe INTERNAL_SERVER_ERROR și BAD_GATEWAY
+    *   ✅ Fix CORS configuration:
+        *   Changed to `allowedOriginPatterns=*`
+        *   Set `allowCredentials=false`
+    *   ✅ Adăugat request headers: `X-Gateway-Route`, `X-Request-Timestamp`
+    *   ✅ Health checks actualizate: circuitbreakers, ratelimiters endpoints
+    *   ✅ Enhanced logging pentru Gateway filters și route matching
+    *   ✅ Gateway rulează pe port **8081** (client-facing)
+    *   ✅ Manager service pe port **8082** (internal)
+    *   ✅ Test script creat: `test-enrollment-flow-gateway.ps1`
+    *   ✅ Toate testele PASSED: enrollment flow complet prin Gateway
+    *   📄 Documentație: `IMPLEMENTATION-STEP9-SUMMARY.md`
 
 ## 9. Teste
 
