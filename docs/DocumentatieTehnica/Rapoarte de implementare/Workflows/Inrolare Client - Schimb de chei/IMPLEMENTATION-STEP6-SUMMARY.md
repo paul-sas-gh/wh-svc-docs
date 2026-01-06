@@ -1,5 +1,5 @@
 ﻿---
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 # Step 6 Implementation Summary - Adapters Layer
@@ -19,7 +19,7 @@ Successfully implemented Step 6 - Webhook Management Service Adapters Layer foll
 **Location**: src/main/java/com/managerwebhooks/adapter/cache/RedisKeypairRepository.java
 - Implementation of TemporaryKeyRepository
 - Retrieves temporary keypairs stored during Phase 1
-- Key format: keypair:{clientId}, TTL: 5 minutes
+- Key format: `keypair:{clientId}`, TTL: 5 minutes
 - Comprehensive error handling and logging
 ### 3. SpringDataClientRepository.java (Spring Data JPA)
 **Location**: src/main/java/com/managerwebhooks/adapter/persistence/SpringDataClientRepository.java
@@ -51,7 +51,7 @@ Successfully implemented Step 6 - Webhook Management Service Adapters Layer foll
 - Updated documentation
 ## Architecture Validation
 ✅ **Hexagonal Architecture**:
-`
+```text
 Domain (Core)
     └── Client (JPA Entity)
 Ports (Interfaces)
@@ -67,15 +67,15 @@ Adapters (Implementations)
     └── Feign
         ├── SecurityServiceFeignClient (UPDATED)
         └── SecurityServiceAdapter (UPDATED)
-`
+```
 ## Configuration
 ### Repository Strategy
-`properties
+```properties
 # Default: JPA (PostgreSQL)
 client.repository.type=jpa
 # For tests: In-memory
 client.repository.type=in-memory
-`
+```
 ## Integration Points
 ✅ **Security Service Integration**:
 - decrypt() - Decrypts client's public key

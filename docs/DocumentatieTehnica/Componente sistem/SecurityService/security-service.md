@@ -29,7 +29,9 @@ Security Service nu expune direct endpoint-uri către aplicațiile client, ci of
 - Dezavantaje: Necesită distribuție sigură a cheii secrete, nu oferă semnătură digitală sau schimb de chei.
 
 **Decizie:**
-Pentru acest proiect, s-a ales RSA pentru toate operațiunile de criptare/decriptare, deoarece simplifică integrarea pentru clienți, nu necesită schimb de chei secrete și asigură interoperabilitate largă. AES ar fi mai performant pentru date mari, dar ar adăuga complexitate suplimentară pentru clienți.
+Am adoptat criptare hibridă:
+- RSA 2048 OAEP-SHA256 pentru a proteja cheia simetrică + IV (schimb de chei sigur, fără partajare prealabilă).
+- AES-256-GCM pentru a cripta payload-urile (performanță bună pe date mari și integritate prin tag GCM).
 
 ---
 
@@ -136,11 +138,21 @@ Interfața Swagger UI oferă:
 
 ---
 
+## Algoritm actual de criptare / decriptare
+
+**Abordare:** criptare hibridă (envelope encryption) pentru a suporta payload-uri mari, păstrând contractul unui singur câmp Base64.
+
+- **RSA 2048 OAEP-SHA256 (asimetric, pentru cheie+IV):** Padding modern OAEP cu hash SHA-256; oferă protecție mai bună la atacuri decât PKCS#1 v1.5, max ~190B per bloc pentru 2048 biți, folosit doar pentru a proteja cheia simetrică și IV.
+- **AES-256-GCM (simetric, pentru payload):** Criptare rapidă pe blocuri cu tag de integritate GCM (AEAD); folosește cheie de 256 biți și IV de 12 octeți; detectează automat alterarea datelor.
+- Format rezultat (un singur string Base64): `[lenRSA(2 bytes)][RSA(key+iv)][AES(ciphertext+tag)]`.
+- /encrypt generează o cheie AES aleatoare și IV, criptează datele cu AES-GCM, apoi criptează cheia+IV cu RSA și returnează un singur Base64.
+- /decrypt desface formatul: citește lungimea, decriptează cheia+IV cu RSA, apoi decriptează ciphertext-ul cu AES-GCM.
+- Beneficii: performanță bună pe date mari, contract stabil (un singur string), rezistență la tampering prin GCM.
+---
+
 ## Notă de utilizare
 
 - Toate datele și cheile sunt codate Base64.
 - Cheile generate sunt de 2048 biți (RSA).
-- Pentru mesaje mai mari de 245 bytes, se recomandă criptare hibridă (nu este implementată aici).
+- Pentru mesaje mari se folosește criptarea hibridă RSA + AES-GCM (implementată în /encrypt și /decrypt).
 - Endpoint-urile pot fi consumate atât de alte servicii interne, cât și pentru testare manuală (curl, Postman etc).
-
----

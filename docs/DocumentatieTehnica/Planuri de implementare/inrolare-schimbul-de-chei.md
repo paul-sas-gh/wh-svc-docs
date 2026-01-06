@@ -288,8 +288,8 @@ sequenceDiagram
         *   Adăugat @ConditionalOnProperty(client.repository.type=in-memory)
         *   Activare condițională pentru teste
     *   📄 Documentație: Toate fișierele create și compilare cu succes
-7.  **Webhook Management Service - Application**:
-    *   Implementare `ClientEnrollmentService`.
+7.  **Webhook Management Service - Application**: ✅ **COMPLETAT** (6 ian 2026)
+    *   Implementare `ClientEnrollmentService` finalizată.
     *   Logica: 
         1. Retrieve Redis (sistemPrivKey)
         2. Call Security Service `/decrypt` (encryptedClientPubKey, systemPrivKey)
@@ -299,9 +299,10 @@ sequenceDiagram
         6. Delete Redis entry (cleanup)
         7. Return encrypted response
     *   Tratare erori (chei invalide, erori decriptare, Redis miss, Security Service failures).
-8.  **Webhook Management Service - API**:
-    *   Creare DTO-uri (`SetPublicKeyRequest`, `SetPublicKeyResponse`).
-    *   Implementare Controller endpoint.
+8.  **Webhook Management Service - API**: ✅ **COMPLETAT** (6 ian 2026)
+    *   Creare DTO-uri (`CompleteEnrollmentRequest`, `CompleteEnrollmentResponse`).
+    *   Implementare controller `ClientEnrollmentController` cu endpoint-ul `/enroll/complete`.
+    *   Documentație OpenAPI, validare input și răspunsuri de eroare consistente.
 9.  **API Gateway**:
     *   Configurare rută în `application.yml` pentru `/set-client-public-key`.
 
@@ -320,4 +321,3 @@ sequenceDiagram
 *   **Security Tests**:
     *   Verificare că endpoint-ul acceptă doar payload valid.
     *   Verificare comportament la chei publice malformate.
-
