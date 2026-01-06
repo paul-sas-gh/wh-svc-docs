@@ -1,7 +1,9 @@
 ---
 id: inrolare-schimbul-de-chei
 title: Plan Implementare - Înrolare Faza 2
+sidebar_position: 1
 ---
+
 
 # Plan de Implementare: Înrolare Client - Faza 2 (Schimb Securizat de Chei)
 
@@ -334,13 +336,22 @@ sequenceDiagram
 
 ## 9. Teste
 
-*   **Unit Tests (Service Layer)**:
-    *   Mock `RedisRepository` pentru a returna o cheie privată de test.
-    *   Mock `SecurityService` pentru a returna o pereche de chei nouă.
-    *   Mock `ClientRepository`.
-    *   Testare flux succes: verificare decriptare corectă și apelare metode repository.
-    *   Testare erori: cheie Redis lipsă, format cheie invalid (crypto exception).
-*   **Integration Tests**:
+*   **Unit Tests (Service Layer)**: ✅ **COMPLETAT** (6 ian 2026)
+    *   ✅ Mock `RedisRepository` (TemporaryKeyRepository) - returns test private key
+    *   ✅ Mock `SecurityService` (SecurityServicePort) - returns new keypair
+    *   ✅ Mock `ClientRepository` - saves client data
+    *   ✅ Test success flow: verify correct decryption and repository calls
+    *   ✅ Test errors:
+        *   TemporaryKeyNotFoundException - Redis keys missing
+        *   DecryptionFailedException - invalid encrypted data
+        *   ClientAlreadyExistsException - client already enrolled
+        *   KeyGenerationException - keypair generation failure
+        *   EncryptionFailedException - invalid public key format
+        *   Redis cleanup failure - enrollment still succeeds
+    *   ✅ Test workflow order - verify correct sequence of operations
+    *   ✅ **8 tests ALL PASSED**
+    *   📄 Test file: `CompleteEnrollmentServiceTest.java`
+*   **Integration Tests**: ✅ **COMPLETAT** (4 ian 2026)
     *   Test cu container Redis și PostgreSQL (Testcontainers).
     *   Verificare că datele sunt salvate corect în DB.
     *   Verificare că cheia din Redis este ștearsă după succes (opțional, dar recomandat).

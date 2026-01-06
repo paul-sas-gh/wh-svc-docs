@@ -1,8 +1,8 @@
 ---
-sidebar_position: 9
+sidebar_position: 8
 ---
 
-# Plan de Implementare - Pasul 9: API Gateway Configuration
+# Subplan de Implementare - Pasul 9: API Gateway Configuration
 
 **Data planificare**: 6 ianuarie 2026
 **Status**: ✅ COMPLETED
