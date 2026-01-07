@@ -18,10 +18,10 @@ Această secțiune conține documentația tehnică completă pentru sistemul Sec
 - [API Gateway](./Componente%20sistem/api-gateway.md) - Gateway și routing
 - [Redis](./Componente%20sistem/redis.md) - Cache distribuit
 - [PostgreSQL](./Componente%20sistem/postgresql.md) - Bază de date
-- [RabbitMQ](./Componente%20sistem/rabbitmq.md) - Message broker
+- [RabbitMQ](./Componente sistem/Rabbit-mq/README.md) - Message broker
 
 ### 📋 Planuri de Implementare
-- [Înrolare Client - Schimb de Chei](./Planuri%20de%20implementare/inrolare-schimbul-de-chei.md)
+- [Înrolare Client - Schimb de Chei](./Planuri de implementare/inrolare-schimbul-de-chei.md)
 
 ### 📊 Rapoarte de Implementare
 - [Workflows](./Rapoarte de implementare/Workflows/) - Rapoarte detaliate de implementare

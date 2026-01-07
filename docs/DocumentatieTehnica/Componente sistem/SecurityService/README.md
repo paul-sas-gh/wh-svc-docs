@@ -1,7 +1,7 @@
 ---
 id: security-service
 slug: /DocumentatieTehnica/SecurityService/security-service
-title: Descriere Security Service
+title: Security Service
 ---
 
 # Security Service
