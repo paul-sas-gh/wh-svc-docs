@@ -71,57 +71,7 @@ CREATE TABLE event_types (
 );
 ```
 
-Entity (package corrected):
-```java
-package com.managerwebhooks.domain;
 
-import jakarta.persistence.*;
-import lombok.*;
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-@Entity
-@Table(name = "event_types", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"client_id", "event_type"}, name = "uk_client_event_type")
-})
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class EventType {
-    @Id
-    @Column(name = "event_id", columnDefinition = "UUID")
-    @Builder.Default
-    private UUID eventId = UUID.randomUUID();
-
-    @Column(name = "client_id", nullable = false, columnDefinition = "UUID")
-    private UUID clientId;
-
-    @Column(name = "event_type", nullable = false, length = 255)
-    private String eventType;
-
-    @Column(name = "event_schema", columnDefinition = "jsonb")
-    private String eventSchema;
-
-    @Column(name = "event_description", length = 500)
-    private String eventDescription;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    @Builder.Default
-    private EventStatus status = EventStatus.ACTIVE;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PreUpdate
-    protected void onUpdate() { this.updatedAt = LocalDateTime.now(); }
-}
-```
 
 Results:
 - Flyway validated 3 migrations, schema up-to-date (public: version 3)
@@ -140,15 +90,15 @@ Results:
 **Tasks**:
 
 #### 1. Implement Repository Interfaces
-**Location**: `wh-svc-manager/src/main/java/ro/webhooks/manager/domain/repository/`
+**Location**: `wh-svc-manager/src/main/java/com/managerwebhooks/domain/repository/`
 
 **File**: `EventTypeRepository.java`
 ```java
-package ro.webhooks.manager.domain.repository;
+package com.managerwebhooks.domain.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ro.webhooks.manager.domain.model.EventType;
+import com.managerwebhooks.domain.EventType;
 
 import java.util.List;
 import java.util.Optional;
@@ -160,50 +110,50 @@ import java.util.UUID;
  */
 @Repository
 public interface EventTypeRepository extends JpaRepository<EventType, UUID> {
-    
+
     /**
      * Find event type by client and event type name.
-     * 
-     * @param clientID the UUID of the client
+     *
+     * @param clientId the UUID of the client
      * @param eventType the event type name
      * @return Optional containing the event type if found
      */
-    Optional<EventType> findByClientIDAndEventType(UUID clientID, String eventType);
-    
+    Optional<EventType> findByClientIdAndEventType(UUID clientId, String eventType);
+
     /**
      * Find all event types for a specific client.
-     * 
-     * @param clientID the UUID of the client
+     *
+     * @param clientId the UUID of the client
      * @return List of event types registered by the client
      */
-    List<EventType> findAllByClientID(UUID clientID);
-    
+    List<EventType> findAllByClientId(UUID clientId);
+
     /**
      * Find event type by name (across all clients).
-     * 
+     *
      * @param eventType the event type name
      * @return Optional containing the event type if found
      */
     Optional<EventType> findByEventType(String eventType);
-    
+
     /**
      * Check if specific client has registered an event type.
-     * 
-     * @param clientID the UUID of the client
+     *
+     * @param clientId the UUID of the client
      * @param eventType the event type name
      * @return true if exists, false otherwise
      */
-    boolean existsByClientIDAndEventType(UUID clientID, String eventType);
+    boolean existsByClientIdAndEventType(UUID clientId, String eventType);
 }
 ```
 
 **File**: `ClientRepository.java`
 ```java
-package ro.webhooks.manager.domain.repository;
+package com.managerwebhooks.domain.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ro.webhooks.manager.domain.model.Client;
+import com.managerwebhooks.domain.Client;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -214,22 +164,22 @@ import java.util.UUID;
  */
 @Repository
 public interface ClientRepository extends JpaRepository<Client, UUID> {
-    
+
     /**
      * Find client by UUID.
-     * 
-     * @param clientID the client UUID
+     *
+     * @param clientId the client UUID
      * @return Optional containing the client if found
      */
-    Optional<Client> findById(UUID clientID);
-    
+    Optional<Client> findById(UUID clientId);
+
     /**
      * Check if client exists.
-     * 
-     * @param clientID the client UUID
+     *
+     * @param clientId the client UUID
      * @return true if exists, false otherwise
      */
-    boolean existsById(UUID clientID);
+    boolean existsById(UUID clientId);
 }
 ```
 
@@ -239,20 +189,20 @@ public interface ClientRepository extends JpaRepository<Client, UUID> {
 - [ ] Verify Spring Data JPA generates implementations
 
 #### 2. Implement Repository Tests
-**Location**: `wh-svc-manager/src/test/java/ro/webhooks/manager/domain/repository/`
+**Location**: `wh-svc-manager/src/test/java/com/managerwebhooks/domain/repository/`
 
 **File**: `EventTypeRepositoryTest.java`
 ```java
-package ro.webhooks.manager.domain.repository;
+package com.managerwebhooks.domain.repository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import ro.webhooks.manager.domain.model.EventStatus;
-import ro.webhooks.manager.domain.model.EventType;
+import com.managerwebhooks.domain.EventStatus;
+import com.managerwebhooks.domain.EventType;
 
 import java.util.List;
 import java.util.Optional;
@@ -261,93 +211,93 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@Testcontainers
-@ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("integration")
 class EventTypeRepositoryTest {
-    
+
     @Autowired
     private EventTypeRepository repository;
-    
-    private UUID clientID;
-    
+
+    private UUID clientId;
+
     @BeforeEach
     void setUp() {
-        clientID = UUID.randomUUID();
+        clientId = UUID.randomUUID();
     }
-    
+
     @Test
     void shouldSaveAndRetrieveEventType() {
         // Given
         EventType event = EventType.builder()
-            .clientID(clientID)
+            .clientId(clientId)
             .eventType("order.created")
             .eventSchema("{\"type\": \"object\"}")
             .status(EventStatus.ACTIVE)
             .build();
-        
+
         // When
         EventType saved = repository.save(event);
-        
+
         // Then
-        assertNotNull(saved.getEventID());
-        Optional<EventType> found = repository.findById(saved.getEventID());
+        assertNotNull(saved.getEventId());
+        Optional<EventType> found = repository.findById(saved.getEventId());
         assertTrue(found.isPresent());
         assertEquals("order.created", found.get().getEventType());
     }
-    
+
     @Test
     void shouldFindByClientAndEventType() {
         // Given
-        EventType event = createAndSaveEventType(clientID, "payment.completed");
-        
+        EventType event = createAndSaveEventType(clientId, "payment.completed");
+
         // When
-        Optional<EventType> found = repository.findByClientIDAndEventType(clientID, "payment.completed");
-        
+        Optional<EventType> found = repository.findByClientIdAndEventType(clientId, "payment.completed");
+
         // Then
         assertTrue(found.isPresent());
-        assertEquals(event.getEventID(), found.get().getEventID());
+        assertEquals(event.getEventId(), found.get().getEventId());
     }
-    
+
     @Test
     void shouldReturnEmptyWhenNotFound() {
         // When
-        Optional<EventType> found = repository.findByClientIDAndEventType(clientID, "non.existent");
-        
+        Optional<EventType> found = repository.findByClientIdAndEventType(clientId, "non.existent");
+
         // Then
         assertFalse(found.isPresent());
     }
-    
+
     @Test
-    void shouldFindAllByClientID() {
+    void shouldFindAllByClientId() {
         // Given
-        createAndSaveEventType(clientID, "order.created");
-        createAndSaveEventType(clientID, "order.updated");
+        createAndSaveEventType(clientId, "order.created");
+        createAndSaveEventType(clientId, "order.updated");
         createAndSaveEventType(UUID.randomUUID(), "other.event");
-        
+
         // When
-        List<EventType> events = repository.findAllByClientID(clientID);
-        
+        List<EventType> events = repository.findAllByClientId(clientId);
+
         // Then
         assertEquals(2, events.size());
     }
-    
+
     @Test
     void shouldCheckExistence() {
         // Given
-        createAndSaveEventType(clientID, "user.registered");
-        
+        createAndSaveEventType(clientId, "user.registered");
+
         // When
-        boolean exists = repository.existsByClientIDAndEventType(clientID, "user.registered");
-        boolean notExists = repository.existsByClientIDAndEventType(clientID, "non.existent");
-        
+        boolean exists = repository.existsByClientIdAndEventType(clientId, "user.registered");
+        boolean notExists = repository.existsByClientIdAndEventType(clientId, "non.existent");
+
         // Then
         assertTrue(exists);
         assertFalse(notExists);
     }
-    
-    private EventType createAndSaveEventType(UUID clientID, String eventType) {
+
+    private EventType createAndSaveEventType(UUID clientId, String eventType) {
         EventType event = EventType.builder()
-            .clientID(clientID)
+            .clientId(clientId)
             .eventType(eventType)
             .status(EventStatus.ACTIVE)
             .build();
@@ -358,14 +308,14 @@ class EventTypeRepositoryTest {
 
 **File**: `ClientRepositoryTest.java`
 ```java
-package ro.webhooks.manager.domain.repository;
+package com.managerwebhooks.domain.repository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import ro.webhooks.manager.domain.model.Client;
+import com.managerwebhooks.domain.Client;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -373,34 +323,34 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@Testcontainers
-@ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("integration")
 class ClientRepositoryTest {
-    
+
     @Autowired
     private ClientRepository repository;
-    
+
     @Test
     void shouldSaveAndFindClient() {
         // Given
         Client client = new Client();
         client.setId(UUID.randomUUID());
         client.setName("Test Client");
-        
+
         // When
         Client saved = repository.save(client);
         Optional<Client> found = repository.findById(saved.getId());
-        
+
         // Then
         assertTrue(found.isPresent());
         assertEquals("Test Client", found.get().getName());
     }
-    
+
     @Test
     void shouldReturnEmptyForUnknownClient() {
         // When
         Optional<Client> found = repository.findById(UUID.randomUUID());
-        
+
         // Then
         assertFalse(found.isPresent());
     }
@@ -427,11 +377,11 @@ class ClientRepositoryTest {
 **Tasks**:
 
 #### 1. Implement Cache Configuration
-**Location**: `wh-svc-manager/src/main/java/ro/webhooks/manager/infrastructure/cache/`
+**Location**: `wh-svc-manager/src/main/java/com/managerwebhooks/adapter/cache/`
 
 **File**: `RedisConfig.java`
 ```java
-package ro.webhooks.manager.infrastructure.cache;
+package com.managerwebhooks.adapter.cache;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -470,13 +420,13 @@ public class RedisConfig {
 #### 2. Implement Cache Provider
 **File**: `RedisEventTypeCache.java`
 ```java
-package ro.webhooks.manager.infrastructure.cache;
+package com.managerwebhooks.adapter.cache;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-import ro.webhooks.manager.domain.model.EventType;
+import com.managerwebhooks.domain.EventType;
 
 import java.time.Duration;
 import java.util.List;
@@ -499,40 +449,40 @@ public class RedisEventTypeCache {
     
     private final RedisTemplate<String, Object> redisTemplate;
     
-    public void cacheEventTypesForClient(UUID clientID, List<EventType> eventTypes) {
-        String key = CLIENT_CACHE_PREFIX + clientID;
+    public void cacheEventTypesForClient(UUID clientId, List<EventType> eventTypes) {
+        String key = CLIENT_CACHE_PREFIX + clientId;
         try {
             redisTemplate.opsForValue().set(key, eventTypes, CACHE_TTL);
-            log.debug("Cached {} event types for client {}", eventTypes.size(), clientID);
+            log.debug("Cached {} event types for client {}", eventTypes.size(), clientId);
         } catch (Exception e) {
-            log.warn("Failed to cache event types for client {}: {}", clientID, e.getMessage());
+            log.warn("Failed to cache event types for client {}: {}", clientId, e.getMessage());
         }
     }
     
-    public Optional<List<EventType>> getEventTypesForClient(UUID clientID) {
-        String key = CLIENT_CACHE_PREFIX + clientID;
+    public Optional<List<EventType>> getEventTypesForClient(UUID clientId) {
+        String key = CLIENT_CACHE_PREFIX + clientId;
         try {
             Object cached = redisTemplate.opsForValue().get(key);
             if (cached instanceof List) {
-                log.debug("Cache hit for client {}", clientID);
+                log.debug("Cache hit for client {}", clientId);
                 return Optional.of((List<EventType>) cached);
             }
         } catch (Exception e) {
-            log.warn("Failed to retrieve cache for client {}: {}", clientID, e.getMessage());
+            log.warn("Failed to retrieve cache for client {}: {}", clientId, e.getMessage());
         }
         return Optional.empty();
     }
     
-    public void invalidateEventTypesForClient(UUID clientID) {
-        String key = CLIENT_CACHE_PREFIX + clientID;
+    public void invalidateEventTypesForClient(UUID clientId) {
+        String key = CLIENT_CACHE_PREFIX + clientId;
         try {
             Boolean deleted = redisTemplate.delete(key);
             if (Boolean.TRUE.equals(deleted)) {
-                log.debug("Invalidated cache for client {}", clientID);
+                log.debug("Invalidated cache for client {}", clientId);
             }
             invalidateAllCache();
         } catch (Exception e) {
-            log.warn("Failed to invalidate cache for client {}: {}", clientID, e.getMessage());
+            log.warn("Failed to invalidate cache for client {}: {}", clientId, e.getMessage());
         }
     }
     
@@ -574,20 +524,19 @@ public class RedisEventTypeCache {
 ```
 
 #### 3. Create Cache Tests
-**Location**: `wh-svc-manager/src/test/java/ro/webhooks/manager/infrastructure/cache/`
+**Location**: `wh-svc-manager/src/test/java/com/managerwebhooks/adapter/cache/`
 
 **File**: `RedisEventTypeCacheTest.java`
 ```java
-package ro.webhooks.manager.infrastructure.cache;
+package com.managerwebhooks.adapter.cache;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import ro.webhooks.manager.domain.model.EventStatus;
-import ro.webhooks.manager.domain.model.EventType;
+import com.managerwebhooks.domain.EventStatus;
+import com.managerwebhooks.domain.EventType;
 
 import java.util.List;
 import java.util.Optional;
@@ -596,31 +545,30 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Testcontainers
-@ActiveProfiles("test")
+@ActiveProfiles("integration")
 class RedisEventTypeCacheTest {
     
     @Autowired
     private RedisEventTypeCache cache;
     
-    private UUID clientID;
+    private UUID clientId;
     
     @BeforeEach
     void setUp() {
-        clientID = UUID.randomUUID();
+        clientId = UUID.randomUUID();
         cache.invalidateAllCache();
     }
     
     @Test
     void shouldCacheAndRetrieveEventTypes() {
         // Given
-        EventType event1 = createEventType(clientID, "order.created");
-        EventType event2 = createEventType(clientID, "order.updated");
+        EventType event1 = createEventType(clientId, "order.created");
+        EventType event2 = createEventType(clientId, "order.updated");
         List<EventType> events = List.of(event1, event2);
         
         // When
-        cache.cacheEventTypesForClient(clientID, events);
-        Optional<List<EventType>> retrieved = cache.getEventTypesForClient(clientID);
+        cache.cacheEventTypesForClient(clientId, events);
+        Optional<List<EventType>> retrieved = cache.getEventTypesForClient(clientId);
         
         // Then
         assertTrue(retrieved.isPresent());
@@ -630,7 +578,7 @@ class RedisEventTypeCacheTest {
     @Test
     void shouldReturnEmptyWhenNotCached() {
         // When
-        Optional<List<EventType>> retrieved = cache.getEventTypesForClient(clientID);
+        Optional<List<EventType>> retrieved = cache.getEventTypesForClient(clientId);
         
         // Then
         assertFalse(retrieved.isPresent());
@@ -639,20 +587,20 @@ class RedisEventTypeCacheTest {
     @Test
     void shouldInvalidateCache() {
         // Given
-        EventType event = createEventType(clientID, "user.created");
+        EventType event = createEventType(clientId, "user.created");
         cache.cacheEventTypeByName("user.created", event);
         
         // When
-        cache.invalidateEventTypesForClient(clientID);
+        cache.invalidateEventTypesForClient(clientId);
         Optional<EventType> retrieved = cache.getEventTypeByName("user.created");
         
         // Then
         assertFalse(retrieved.isPresent());
     }
     
-    private EventType createEventType(UUID clientID, String eventType) {
+    private EventType createEventType(UUID clientId, String eventType) {
         return EventType.builder()
-            .clientID(clientID)
+            .clientId(clientId)
             .eventType(eventType)
             .status(EventStatus.ACTIVE)
             .build();
@@ -680,11 +628,11 @@ class RedisEventTypeCacheTest {
 **Tasks**:
 
 #### 1. Create Domain Exceptions
-**Location**: `wh-svc-manager/src/main/java/ro/webhooks/manager/domain/exception/`
+**Location**: `wh-svc-manager/src/main/java/com/managerwebhooks/domain/exception/`
 
 **File**: `EventRegistrationException.java`
 ```java
-package ro.webhooks.manager.domain.exception;
+package com.managerwebhooks.domain.exception;
 
 import org.springframework.http.HttpStatus;
 
@@ -713,15 +661,15 @@ public class EventRegistrationException extends RuntimeException {
 
 **File**: `ClientNotFoundException.java`
 ```java
-package ro.webhooks.manager.domain.exception;
+package com.managerwebhooks.domain.exception;
 
 import org.springframework.http.HttpStatus;
 import java.util.UUID;
 
 public class ClientNotFoundException extends EventRegistrationException {
-    public ClientNotFoundException(UUID clientID) {
+    public ClientNotFoundException(UUID clientId) {
         super(
-            "Client with ID " + clientID + " not found",
+            "Client with ID " + clientId + " not found",
             "CLIENT_NOT_FOUND",
             HttpStatus.NOT_FOUND
         );
@@ -731,16 +679,16 @@ public class ClientNotFoundException extends EventRegistrationException {
 
 **File**: `DuplicateEventTypeException.java`
 ```java
-package ro.webhooks.manager.domain.exception;
+package com.managerwebhooks.domain.exception;
 
 import org.springframework.http.HttpStatus;
 import java.util.UUID;
 
 public class DuplicateEventTypeException extends EventRegistrationException {
-    public DuplicateEventTypeException(String eventType, UUID clientID, UUID existingEventID) {
+    public DuplicateEventTypeException(String eventType, UUID clientId, UUID existingEventId) {
         super(
-            String.format("Event type '%s' already registered for client %s (eventID: %s)", 
-                eventType, clientID, existingEventID),
+            String.format("Event type '%s' already registered for client %s (eventId: %s)", 
+                eventType, clientId, existingEventId),
             "DUPLICATE_EVENT_TYPE",
             HttpStatus.CONFLICT
         );
@@ -750,7 +698,7 @@ public class DuplicateEventTypeException extends EventRegistrationException {
 
 **File**: `InvalidSchemaException.java`
 ```java
-package ro.webhooks.manager.domain.exception;
+package com.managerwebhooks.domain.exception;
 
 import org.springframework.http.HttpStatus;
 
@@ -772,11 +720,11 @@ public class InvalidSchemaException extends EventRegistrationException {
 - [ ] Create `InvalidSchemaException.java`
 
 #### 2. Implement Validation Classes
-**Location**: `wh-svc-manager/src/main/java/ro/webhooks/manager/adapter/dto/`
+**Location**: `wh-svc-manager/src/main/java/com/managerwebhooks/adapter/dto/`
 
 **File**: `RegisterEventTypeRequest.java`
 ```java
-package ro.webhooks.manager.adapter.dto;
+package com.managerwebhooks.adapter.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -795,12 +743,12 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RegisterEventTypeRequest {
     
-    @NotBlank(message = "clientID is required")
+    @NotBlank(message = "clientId is required")
     @Pattern(
         regexp = "^[0-9a-fA-F-]{36}$",
-        message = "clientID must be a valid UUID string"
+        message = "clientId must be a valid UUID string"
     )
-    private String clientID;
+    private String clientId;
     
     @NotBlank(message = "data is required")
     private String data;
@@ -809,7 +757,7 @@ public class RegisterEventTypeRequest {
 
 **File**: `DecryptedEventRegistrationPayload.java`
 ```java
-package ro.webhooks.manager.adapter.dto;
+package com.managerwebhooks.adapter.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -847,7 +795,7 @@ public class DecryptedEventRegistrationPayload {
 
 **File**: `ValidJsonSchema.java`
 ```java
-package ro.webhooks.manager.adapter.dto;
+package com.managerwebhooks.adapter.dto;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -867,7 +815,7 @@ public @interface ValidJsonSchema {
 
 **File**: `JsonSchemaValidator.java`
 ```java
-package ro.webhooks.manager.adapter.dto;
+package com.managerwebhooks.adapter.dto;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -904,11 +852,11 @@ public class JsonSchemaValidator implements ConstraintValidator<ValidJsonSchema,
 - [ ] Create `JsonSchemaValidator.java`
 
 #### 3. Create Validation Tests
-**Location**: `wh-svc-manager/src/test/java/ro/webhooks/manager/adapter/dto/`
+**Location**: `wh-svc-manager/src/test/java/com/managerwebhooks/adapter/dto/`
 
 **File**: `JsonSchemaValidatorTest.java`
 ```java
-package ro.webhooks.manager.adapter.dto;
+package com.managerwebhooks.adapter.dto;
 
 import jakarta.validation.ConstraintValidatorContext;
 import org.junit.jupiter.api.Test;
@@ -987,21 +935,20 @@ class JsonSchemaValidatorTest {
 **Tasks**:
 
 #### 1. Create Integration Tests
-**Location**: `wh-svc-manager/src/test/java/ro/webhooks/manager/`
+**Location**: `wh-svc-manager/src/test/java/com/managerwebhooks/integration/`
 
 **File**: `PhaseFoundationIntegrationTest.java`
 ```java
-package ro.webhooks.manager;
+package com.managerwebhooks.integration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import ro.webhooks.manager.domain.model.EventStatus;
-import ro.webhooks.manager.domain.model.EventType;
-import ro.webhooks.manager.domain.repository.EventTypeRepository;
-import ro.webhooks.manager.infrastructure.cache.RedisEventTypeCache;
+import com.managerwebhooks.domain.EventStatus;
+import com.managerwebhooks.domain.EventType;
+import com.managerwebhooks.domain.repository.EventTypeRepository;
+import com.managerwebhooks.adapter.cache.RedisEventTypeCache;
 
 import java.util.List;
 import java.util.Optional;
@@ -1010,8 +957,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Testcontainers
-@ActiveProfiles("test")
+@ActiveProfiles("integration")
 class PhaseFoundationIntegrationTest {
     
     @Autowired
@@ -1023,9 +969,9 @@ class PhaseFoundationIntegrationTest {
     @Test
     void shouldSaveEventTypeAndCacheIt() {
         // Given
-        UUID clientID = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
         EventType event = EventType.builder()
-            .clientID(clientID)
+            .clientId(clientId)
             .eventType("order.created")
             .eventSchema("{\"type\": \"object\"}")
             .status(EventStatus.ACTIVE)
@@ -1033,29 +979,29 @@ class PhaseFoundationIntegrationTest {
         
         // When
         EventType saved = eventTypeRepository.save(event);
-        List<EventType> events = eventTypeRepository.findAllByClientID(clientID);
-        cache.cacheEventTypesForClient(clientID, events);
+        List<EventType> events = eventTypeRepository.findAllByClientId(clientId);
+        cache.cacheEventTypesForClient(clientId, events);
         
         // Then
-        assertNotNull(saved.getEventID());
+        assertNotNull(saved.getEventId());
         assertEquals(1, events.size());
-        Optional<List<EventType>> cached = cache.getEventTypesForClient(clientID);
+        Optional<List<EventType>> cached = cache.getEventTypesForClient(clientId);
         assertTrue(cached.isPresent());
     }
     
     @Test
     void shouldInvalidateCacheOnUpdate() {
         // Given
-        UUID clientID = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
         EventType event = eventTypeRepository.save(EventType.builder()
-            .clientID(clientID)
+            .clientId(clientId)
             .eventType("user.created")
             .status(EventStatus.ACTIVE)
             .build());
         
         // When
         cache.cacheEventTypeByName("user.created", event);
-        cache.invalidateEventTypesForClient(clientID);
+        cache.invalidateEventTypesForClient(clientId);
         Optional<EventType> cached = cache.getEventTypeByName("user.created");
         
         // Then
@@ -1153,51 +1099,81 @@ Ready for Phase 2: Core Logic (EventRegistrationService, queue creation)
 
 ## 📊 File Summary
 
-### Total Files to Create: 25+
+### Total Files to Create/Update: 25+
 
-**Domain Layer** (5 files):
+**Domain Layer** (in `com.managerwebhooks.domain`):
 - EventType.java
 - EventStatus.java
-- EventRegistrationException.java
-- ClientNotFoundException.java
-- DuplicateEventTypeException.java
-- InvalidSchemaException.java
+- repository/EventTypeRepository.java
+- repository/ClientRepository.java
+- exception/EventRegistrationException.java
+- exception/ClientNotFoundException.java
+- exception/DuplicateEventTypeException.java
+- exception/InvalidSchemaException.java
 
-**Repository Layer** (2 files):
-- EventTypeRepository.java
-- ClientRepository.java
+**Adapter/DTO Layer** (in `com.managerwebhooks.adapter`):
+- dto/RegisterEventTypeRequest.java
+- dto/DecryptedEventRegistrationPayload.java
+- dto/ValidJsonSchema.java
+- dto/JsonSchemaValidator.java
+- cache/RedisConfig.java
+- cache/RedisEventTypeCache.java
 
-**Cache Layer** (1 file):
-- RedisEventTypeCache.java
-- RedisConfig.java
+**Test Files** (in `com.managerwebhooks`):
+- domain/EventTypeTest.java
+- domain/repository/EventTypeRepositoryTest.java
+- domain/repository/ClientRepositoryTest.java
+- adapter/cache/RedisEventTypeCacheTest.java
+- adapter/dto/JsonSchemaValidatorTest.java
+- integration/PhaseFoundationIntegrationTest.java
 
-**DTO/Validation** (4 files):
-- RegisterEventTypeRequest.java
-- DecryptedEventRegistrationPayload.java
-- ValidJsonSchema.java
-- JsonSchemaValidator.java
+**Configuration**:
+- src/main/resources/application.yml (update)
+- src/main/resources/application-docker.yml (update)
 
-**Test Files** (10+ files):
-- EventTypeTest.java
-- EventTypeRepositoryTest.java
-- ClientRepositoryTest.java
-- RedisEventTypeCacheTest.java
-- RegisterEventTypeRequestTest.java
-- JsonSchemaValidatorTest.java
-- PhaseFoundationIntegrationTest.java
-- TestDataBuilder.java
-- Additional test files as needed
+**Database Migrations**:
+- src/main/resources/db/migration/V2__create_event_types_table.sql
+- src/main/resources/db/migration/V3__create_event_types_indexes.sql
 
-**Configuration** (2 files):
-- application.yml (update)
-- application-docker.yml (update)
-
-**Database Migrations** (2 files):
-- V1__Initial_Schema.sql
-- V2__Create_Indexes.sql
-
-**Documentation** (1 file):
+**Documentation**:
 - PHASE-1-NOTES.md
+
+---
+
+### Package Structure
+
+**All development in ONE package hierarchy:**
+
+```
+com.managerwebhooks
+├── domain
+│   ├── EventType.java
+│   ├── EventStatus.java
+│   ├── Client.java
+│   ├── exception/
+│   │   ├── EventRegistrationException.java
+│   │   ├── ClientNotFoundException.java
+│   │   ├── DuplicateEventTypeException.java
+│   │   └── InvalidSchemaException.java
+│   └── repository/
+│       ├── EventTypeRepository.java
+│       └── ClientRepository.java
+├── adapter
+│   ├── cache/
+│   │   ├── RedisConfig.java
+│   │   └── RedisEventTypeCache.java
+│   └── dto/
+│       ├── RegisterEventTypeRequest.java
+│       ├── DecryptedEventRegistrationPayload.java
+│       ├── ValidJsonSchema.java
+│       └── JsonSchemaValidator.java
+└── integration (tests)
+    ├── domain/
+    │   └── repository/ (test classes)
+    ├── adapter/
+    │   └── cache/ (test classes)
+    └── PhaseFoundationIntegrationTest.java
+```
 
 ---
 
