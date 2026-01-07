@@ -205,55 +205,20 @@ sequenceDiagram
 *   ✅ Fix pentru JSONB column: `@JdbcTypeCode(SqlTypes.JSON)` adăugat la EventType entity
 *   📄 Locație: `src/main/java/com/managerwebhooks/port/out/`, `src/test/java/com/managerwebhooks/port/out/`
 
-### Pasul 4: Adapters - Redis Cache Implementation
-**Locație**: `src/main/java/com/managerwebhooks/adapter/cache/`
-
-**RedisEventTypeCache.java**:
-```java
-package com.managerwebhooks.adapter.cache;
-
-import com.managerwebhooks.domain.EventType;
-import com.managerwebhooks.port.out.EventTypeCache;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Component;
-
-import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-@Component
-@RequiredArgsConstructor
-public class RedisEventTypeCache implements EventTypeCache {
-    
-    private static final String CACHE_PREFIX = "event_types:client:";
-    private static final Duration CACHE_TTL = Duration.ofHours(1);
-    
-    private final RedisTemplate<String, Object> redisTemplate;
-    
-    @Override
-    public Optional<List<EventType>> getEventTypesForClient(UUID clientId) {
-        String key = CACHE_PREFIX + clientId;
-        Object cached = redisTemplate.opsForValue().get(key);
-        return cached != null ? Optional.of((List<EventType>) cached) : Optional.empty();
-    }
-    
-    @Override
-    public void cacheEventTypesForClient(UUID clientId, List<EventType> eventTypes) {
-        String key = CACHE_PREFIX + clientId;
-        redisTemplate.opsForValue().set(key, eventTypes, CACHE_TTL);
-    }
-    
-    @Override
-    public void invalidateEventTypesForClient(UUID clientId) {
-        String key = CACHE_PREFIX + clientId;
-        redisTemplate.delete(key);
-    }
-}
-```
-
-**Teste**: `RedisEventTypeCacheTest.java`
+### Pasul 4: Adapters - Redis Cache Implementation ✅ **IMPLEMENTAT**
+*   ✅ Class `RedisEventTypeCache` implementat în `adapter/cache/`
+    *   Implementare interface `EventTypeCache`
+    *   Utilizare `RedisTemplate<String, String>` cu serializare manuală JSON
+    *   Pattern: manual serialize/deserialize cu ObjectMapper și TypeReference
+    *   Metode: `getEventTypesForClient()`, `cacheEventTypesForClient()`, `invalidateEventTypesForClient()`
+*   ✅ Configurare Redis template în `RedisConfig`
+    *   Bean `redisTemplateForObjects` adăugat (pentru compatibilitate)
+    *   ObjectMapper cu JavaTimeModule și default typing configurat
+*   ✅ Test integration `RedisEventTypeCacheTest` creat
+    *   10 teste implementate, toate PASSED
+    *   Verificări: cache hit/miss, invalidation, multiple clients, empty list, large lists, key format
+    *   Utilizare Redis real (nu mock) pentru testare
+*   📄 Locație: `src/main/java/com/managerwebhooks/adapter/cache/`, `src/test/java/com/managerwebhooks/adapter/cache/`
 
 ### Pasul 5: Application - Domain Exceptions
 **Locație**: `src/main/java/com/managerwebhooks/application/exception/`
@@ -562,7 +527,7 @@ public ResponseEntity<ErrorResponse> handleDuplicateEventType(DuplicateEventType
 - [x] **Pasul 1**: Baza de date - Schema (V2, V3 migrations) ✅
 - [x] **Pasul 2**: Domain - EventType entity și EventStatus enum ✅
 - [x] **Pasul 3**: Outbound Ports - EventTypeRepository, EventTypeCache interfaces ✅
-- [ ] **Pasul 4**: Adapters - RedisEventTypeCache implementation
+- [x] **Pasul 4**: Adapters - RedisEventTypeCache implementation ✅
 - [ ] **Pasul 5**: Application - Domain exceptions (3 clase)
 - [ ] **Pasul 6**: Inbound Port - RegisterEventTypeUseCase interface
 - [ ] **Pasul 7**: Application - EventRegistrationService implementation
