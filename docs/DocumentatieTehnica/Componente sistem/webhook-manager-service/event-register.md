@@ -140,10 +140,15 @@ Content-Type: application/json
 ```json
 {
   "eventType": "order.created",
-  "eventSchema": "{\"type\":\"object\",\"properties\":{\"orderId\":{\"type\":\"string\"},\"amount\":{\"type\":\"number\"}},\"required\":[\"orderId\"]}",
+  "eventSchema": null,
   "eventDescription": "Event triggered when a new order is created"
 }
 ```
+
+**⚠️ Note Importante:**
+- `clientId` **NU** este inclus în datele criptate - este trimis separat în root payload
+- `eventSchema` poate fi `null` (validare JSON Schema opțională)
+- `eventType` și `eventDescription` sunt obligatorii în payload-ul criptat
 
 #### Response
 
