@@ -1,57 +1,292 @@
 ---
 id: plan-arhitectura
-title: Arhitectura servicii
+title: Arhitectura Serviciilor
 sidebar_position: 1
 ---
 
+# Arhitectură Proiect Secure WebHooks
+
+**Ultima actualizare:** 7 februarie 2026  
+**Status:** Arhitectură microservicii cu componente implementate și planificate
+
 Arhitectură bazată pe microservicii pentru decuplare, scalabilitate și izolare a responsabilităților.
 
-## Componente sistem:
+---
 
-1. API Gateway (Spring Cloud Gateway)
-   - Autentificare & autorizare
-   - Rate limiting & circuit breakers
-   - Routing centralizat
-2. Webhook Management Service
-   - CRUD subscripții
-   - Validare endpoint + stocare secret
-   - Exporte configurări
-3. Event Ingestion Service
-   - Expune endpoint securizat de primire evenimente
-   - Enrich + validare payload
-   - Publicare în RabbitMQ (exchange topic)
-4. Event Dispatcher (Workers)
-   - Consumă mesaje (queues per event type)
-   - Calculează semnătură HMAC
-   - Trimite HTTP webhook (WebClient non-blocking)
-   - Retries + backoff + DLQ
-5. Notification Service (opțional)
-   - Alerte eșec livrare persistentă (email / webhook intern)
-6. Security Service
-   - Management chei criptografice (asymetric)
-   - Rotire chei periodică
-   - API pentru semnare/validare HMAC
-7. Observability Stack
-   - Prometheus + Grafana (metrici)
-   - ELK (loguri structurate + corelare)
-   - Tracing (OpenTelemetry) – distribuție latențe
-8. RabbitMQ Cluster
-   - Exchange topic pentru evenimente
-   - Cozi dedicate per tip eveniment
-   - Politici de retry și DLQ
-9. Baza de date (PostgreSQL)
-   - Stocare subscripții, secrete, jurnale livrări
-   - Indici pentru performanță
-10. Redis Cache
-   - Caching subscripții active
-   - Rate limiting counters
+## Componente Sistem
 
-## Flux de inrolare client in sistem:
+### ✅ Componente Implementate (Production Ready)
 
-### Faza 1: Înregistrare inițială
+#### 1. **wh-svc-gateway** - API Gateway (Spring Cloud Gateway)
+**Port:** 8081  
+**Status:** ✅ **Implementat**
 
-:::info
-Această secțiune descrie prima fază a procesului de înrolare a unui client, evidențiind pașii necesari pentru inițierea și securizarea înregistrării prin API Gateway.
+**Responsabilități:**
+- Autentificare & autorizare (Spring Security)
+- Rate limiting per client (Redis-backed)
+- Circuit breakers (Resilience4j)
+- Routing centralizat către servicii backend
+- CORS configuration
+
+**Endpoints expuse:**
+- `/register` - Înregistrare clienți (Phase 1 enrollment)
+- `/enroll/**` - Finalizare enrollment (Phase 2)
+- `/api/v1/event-types/**` - Management tipuri evenimente
+- `/api/v1/subscriptions/**` - Management subscripții
+- `/api/v1/webhooks/**` - Publicare mesaje webhook
+
+---
+
+#### 2. **wh-svc-manager** - Webhook Management Service
+**Port:** 8082  
+**Status:** ✅ **Implementat**
+
+**Responsabilități:**
+- CRUD subscripții și tipuri evenimente
+- Validare și persistență date
+- Business logic pentru enrollment 2-phase
+- Publicare mesaje webhook către RabbitMQ
+- Cache management pentru chei criptografice
+
+**Componente:**
+- Enrollment services (temporary keys, client registration)
+- Event type management
+- Subscription management
+- Message delivery service (RabbitMQ publisher)
+
+**Database:** PostgreSQL cu Flyway migrations
+
+---
+
+#### 3. **wh-svc-security** - Security Service
+**Port:** 8080  
+**Status:** ✅ **Implementat**
+
+**Responsabilități:**
+- Generare perechi chei RSA-2048
+- Criptare hibridă (RSA + AES-256-GCM)
+- Decriptare mesaje
+- API REST pentru operații criptografice
+
+**Algoritmi implementați:**
+- RSA/ECB/OAEPWithSHA-256AndMGF1Padding
+- AES/GCM/NoPadding (256-bit key, 128-bit tag)
+
+---
+
+#### 4. **wh-client** - Aplicație Client (BFF + Frontend)
+**Ports:** 3000-3002 (Backend), 5171-5173 (Frontend)  
+**Status:** ✅ **Implementat**
+
+**Componente:**
+
+**Backend (Node.js + Express):**
+- BFF (Backend for Frontend) pattern
+- Proxy către servicii Java
+- RabbitMQ consumer pentru mesaje webhook
+- Socket.IO server pentru real-time updates
+- Servicii criptare/decriptare
+
+**Frontend (React 19 + Vite):**
+- Dashboard cu statistici
+- Management evenimente și subscripții
+- Chat real-time pentru webhook messages
+- Configurație dinamică backend URL
+- Material-UI + Tremor components
+
+---
+
+#### 5. **PostgreSQL Database**
+**Port:** 5432  
+**Status:** ✅ **Implementat**
+
+**Tabele principale:**
+- `clients` - Clienți înregistrați + chei criptografice
+- `temporary_keys` - Chei temporare pentru enrollment Phase 1
+- `event_types` - Tipuri evenimente publicate de clienți
+- `subscriptions` - Subscripții la evenimente
+- `flyway_schema_history` - Versioning schema DB
+
+**Features:**
+- Flyway migrations pentru version control
+- Indexare pe client_id, event_id
+- Connection pooling (HikariCP)
+
+---
+
+#### 6. **Redis Cache**
+**Port:** 6379  
+**Status:** ✅ **Implementat**
+
+**Use cases:**
+- Cache chei criptografice (TTL configurabil)
+- Rate limiting counters pentru Gateway
+- Temporary keys pentru enrollment Phase 1
+- Session storage (planificat)
+
+---
+
+#### 7. **RabbitMQ Message Broker**
+**Ports:** 5672 (AMQP), 15672 (Management UI)  
+**Status:** ✅ **Implementat**
+
+**Arhitectură:**
+- **Exchange:** `webhook.events` (Topic Exchange)
+- **Routing Key Pattern:** `webhook.client.{clientId}`
+- **Queue Naming:** `queue.client.{clientId}`
+- **Durability:** Toate queue-urile sunt durable
+- **ACK Mode:** Manual ACK pentru reliability
+
+**Consumers:**
+- wh-client-backend (Node.js) - Un consumer per client
+
+---
+
+### 📋 Componente Planificate (Q1-Q2 2026)
+
+#### 8. **Event Ingestion Service** 📋
+**Status:** 📋 **Planificat Q2 2026**
+
+**Responsabilități planificate:**
+- Endpoint securizat de primire evenimente
+- Validare și enrichment payload
+- Publicare în RabbitMQ (exchange topic)
+- Validare HMAC signature
+
+**Notă:** În implementarea actuală, funcționalitatea este acoperită de `wh-svc-manager`.
+
+---
+
+#### 9. **Event Dispatcher Workers** 📋
+**Status:** 📋 **Planificat Q2 2026**
+
+**Responsabilități planificate:**
+- Consumă mesaje din queues per event type
+- Calculează semnătură HMAC
+- Trimite HTTP webhook (WebClient non-blocking)
+- Retries cu exponential backoff
+- Dead Letter Queue (DLQ) pentru failed messages
+
+**Notă:** În implementarea actuală, delivery-ul se face prin wh-client-backend cu Socket.IO.
+
+---
+
+#### 10. **Notification Service** 📋
+**Status:** 📋 **Planificat Q2 2026** (Opțional)
+
+**Responsabilități planificate:**
+- Alerte pentru eșecuri persistente de livrare
+- Notificări email/webhook intern
+- Dashboard pentru monitoring failed webhooks
+
+---
+
+#### 11. **Observability Stack** ⏳
+**Status:** ⏳ **Parțial Implementat**
+
+**Implementat:**
+- ✅ Spring Actuator health checks
+- ✅ Logging structured (SLF4J + Logback)
+- ✅ Console logging Node.js
+
+**Planificat Q1 2026:**
+- 📋 Prometheus + Grafana (metrici)
+- 📋 ELK Stack (loguri centralizate)
+- 📋 OpenTelemetry (distributed tracing)
+
+---
+
+#### 12. **RabbitMQ Cluster HA** 📋
+**Status:** 📋 **Planificat Q2 2026**
+
+**Planificat:**
+- Cluster RabbitMQ cu 3+ noduri
+- Quorum queues pentru high availability
+- Load balancer pentru conexiuni
+- Automatic failover
+
+**Notă:** Rulează single instance în Docker în prezent.
+
+---
+
+## Arhitectură Actuală vs Planificată
+
+### Stare Actuală (Februarie 2026)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    ARHITECTURĂ IMPLEMENTATĂ                  │
+└─────────────────────────────────────────────────────────────┘
+
+Client Browser
+    ↓ (HTTP/WebSocket)
+wh-client-frontend (React)
+    ↓ (HTTP REST + Socket.IO)
+wh-client-backend (Node.js BFF)
+    ↓ (HTTP REST)                    ↓ (AMQP Consumer)
+wh-svc-gateway (Port 8081)        RabbitMQ (Port 5672)
+    ↓                                  ↑
+    ├─→ wh-svc-security (8080)        │
+    ├─→ wh-svc-manager (8082) ─────────┘
+    │        ↓           ↓
+    │   PostgreSQL    Redis
+    │    (5432)       (6379)
+    └─→ Rate Limiting + Circuit Breakers
+```
+
+### Arhitectură Planificată (Q2 2026)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  ARHITECTURĂ ȚINTĂ (Q2 2026)                │
+└─────────────────────────────────────────────────────────────┘
+
+                     Load Balancer
+                           ↓
+              ┌────────────┴────────────┐
+              ↓                         ↓
+    wh-svc-gateway (multiple instances)
+              ↓
+    ┌─────────┴─────────────────────┐
+    ↓                               ↓
+wh-svc-manager            Event Ingestion Service
+    ↓                               ↓
+    ↓                    RabbitMQ Cluster (3 nodes)
+    ↓                     ┌─────────┴─────────┐
+    ↓                     ↓                   ↓
+    ↓         Event Dispatcher         Notification Workers
+    ↓              Workers                (HTTP Delivery)
+    ↓                     ↓                   ↓
+PostgreSQL          Dead Letter Queue    Subscriber
+(Primary +              (DLQ)            Webhooks
+ Replicas)
+    ↓
+Redis Cluster
+(Sentinel)
+
+        ┌──────────────────────────────┐
+        │   Observability Stack        │
+        ├──────────────────────────────┤
+        │ Prometheus + Grafana         │
+        │ ELK Stack (ES + Logstash)    │
+        │ Jaeger (Distributed Tracing) │
+        └──────────────────────────────┘
+```
+
+---
+
+## Flux de Înrolare Client în Sistem (✅ Implementat)
+
+**Status:** ✅ **COMPLET IMPLEMENTAT**  
+**Data implementare:** Ianuarie 2026  
+**Teste:** Integration tests cu Testcontainers
+
+Procesul de înrolare se desfășoară în **2 faze** pentru a asigura schimbul securizat de chei publice între client și sistem, fără a expune chei private.
+
+### Faza 1: Înregistrare Inițială (✅ Implementat)
+
+:::info Implementare Completă
+Faza 1 este complet implementată în `wh-svc-manager` cu endpoint `/register` expus prin `wh-svc-gateway`. Chei temporare sunt stocate în Redis cu TTL de 15 minute.
 :::
 
 1. **Client solicită înrolare:**
@@ -70,9 +305,11 @@ Această secțiune descrie prima fază a procesului de înrolare a unui client, 
    - API Gateway returnează clientID și systemPubKey către client
    - Client stochează systemPubKey pentru utilizare în Faza 2
 
-### Faza 2: Schimb securizat de chei publice
+### Faza 2: Schimb securizat de chei publice (✅ Implementat)
 
-:::info
+:::success Implementare Completă
+Faza 2 este complet implementată în `wh-svc-manager` cu endpoint `/enroll/complete/{clientId}`. Procesul include validare, decriptare chei client, generare chei sistem finale, criptare și stocare în PostgreSQL + Redis cache.
+:::
 Această secțiune detaliază a doua fază a procesului de înrolare, concentrându-se pe schimbul securizat de chei publice între client și sistem, asigurând integritatea și confidențialitatea comunicațiilor viitoare.
 :::
 
@@ -122,7 +359,7 @@ sequenceDiagram
     participant Redis
     participant DB as PostgreSQL
 
-    rect rgb(200, 220, 240)
+
     Note over Client,DB: Phase 1: Initial Registration
     Client->>Gateway: POST /register
     activate Gateway
@@ -137,9 +374,9 @@ sequenceDiagram
     deactivate Manager
     Gateway-->>Client: Return (clientID, systemPubKey)
     deactivate Gateway
-    end
 
-    rect rgb(220, 240, 220)
+
+
     Note over Client,DB: Phase 2: Public Key Exchange
     Client->>Client: Generate (clientPubKey, clientPrivKey)
     Client->>Client: Encrypt clientPubKey with systemPubKey
@@ -156,21 +393,29 @@ sequenceDiagram
     Gateway-->>Client: Enrollment Complete + encrypted systemPubKey
     deactivate Gateway
     Client->>Client: Decrypt systemPubKey with clientPrivKey and store it for future use
-    end
+
 
     Note over Client,DB: Enrollment finished - ready for webhook operations
 ```
-## Flux publicarea de evenimente webhook
+## Flux Publicare și Distribuire Evenimente Webhook (✅ Implementat)
 
-Dupa finalizarea înrolării, clientul este pregătit să publice și să primească evenimente webhook. Fluxul complet este împărțit în 3 subfluxuri distincte:
+**Status:** ✅ **COMPLET IMPLEMENTAT**  
+**Data implementare:** Ianuarie-Februarie 2026  
+**Arhitectură:** RabbitMQ Topic Exchange + Socket.IO real-time delivery
 
-1. **Event Registration** - Înregistrarea tipurilor de evenimente
-2. **Event Subscription** - Abonarea la tipuri de evenimente
-3. **Event Dispatch** - Publicarea și livrarea evenimentelor
+După finalizarea înrolării, clientul este pregătit să publice și să primească evenimente webhook. Fluxul complet este împărțit în 3 subfluxuri distincte:
+
+1. **Event Registration** ✅ - Înregistrarea tipurilor de evenimente
+2. **Event Subscription** ✅ - Abonarea la tipuri de evenimente
+3. **Event Dispatch** ✅ - Publicarea și livrarea evenimentelor
 
 ---
 
-## Subflux 1: Event Registration (Înregistrarea Evenimentelor)
+## Subflux 1: Event Registration (Înregistrarea Evenimentelor) ✅
+
+**Status:** ✅ **Implementat în wh-svc-manager**  
+**Endpoint:** `POST /api/v1/event-types` (prin Gateway)  
+**Data implementare:** Ianuarie 2026
 
 Înainte de a publica sau a se abona la evenimente, clientul trebuie să înregistreze tipurile de evenimente pe care dorește să le publice. Acest subflux gestionează crearea și validarea noilor tipuri de evenimente în sistem.
 
@@ -289,7 +534,11 @@ sequenceDiagram
 
 ---
 
-## Subflux 2: Event Subscription (Abonarea la Evenimente)
+## Subflux 2: Event Subscription (Abonarea la Evenimente) ✅
+
+**Status:** ✅ **Implementat în wh-svc-manager**  
+**Endpoint:** `POST /api/v1/subscriptions` (prin Gateway)  
+**Data implementare:** Ianuarie 2026
 
 După ce un tip de eveniment este înregistrat, alți clienți pot să se aboneze la aceste evenimente. Acest subflux gestionează crearea și validarea abonărilor la evenimentele publicate de alți clienți.
 
@@ -423,13 +672,50 @@ sequenceDiagram
 
 ---
 
-## Subflux 3: Event Dispatch (Publicarea și Livrarea Evenimentelor)
+## Subflux 3: Event Dispatch (Publicarea și Livrarea Evenimentelor) ✅
 
-Aceasta este faza finală unde evenimentele sunt publicate de clienți și livrate la endpoint-urile webhook ale abonaților. Acest subflux gestionează validarea, publicarea în RabbitMQ și livrarea asincronă.
+**Status:** ✅ **Implementat cu arhitectură RabbitMQ + Socket.IO**  
+**Data implementare:** Februarie 2026  
+**Componente:** wh-svc-manager (Publisher) + wh-client-backend (Consumer) + Socket.IO
 
-### Arhitectură Hibridă: Prezentare Generală
+Aceasta este faza finală unde evenimentele sunt publicate de clienți și livrate în timp real către subscriberi. Fluxul implementat folosește RabbitMQ pentru distribuire și Socket.IO pentru afișare real-time în UI.
 
-Sistemul utilizează o **arhitectură hibridă în 3 faze** pentru a combina scalabilitatea per-tip-eveniment cu simplitatea livrării centralizate:
+### Arhitectură Implementată: RabbitMQ Topic Exchange
+
+**Diferențe față de planul inițial:**
+- ❌ Nu există Event Ingestion Service separat → logica este în `wh-svc-manager`
+- ❌ Nu există Event Dispatcher Workers → delivery se face prin `wh-client-backend` + Socket.IO
+- ✅ RabbitMQ Topic Exchange cu routing per client
+- ✅ Consumer Node.js care decriptează și emit pe Socket.IO
+- ✅ Frontend primește mesaje în timp real prin WebSocket
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│           ARHITECTURĂ REALĂ IMPLEMENTATĂ (Feb 2026)          │
+└──────────────────────────────────────────────────────────────┘
+
+Publisher Client A (wh-client-frontend)
+    ↓ [User sends message via Chat UI]
+wh-client-backend (Node.js)
+    ↓ [Encrypt with serverPublicKey]
+wh-svc-gateway (Port 8081)
+    ↓ [POST /api/v1/webhooks/publish]
+wh-svc-manager (Java)
+    ↓ [1. Decrypt with systemPrivateKey]
+    ↓ [2. Find active subscribers for eventId]
+    ↓ [3. For each subscriber: encrypt with subscriberPublicKey]
+    ↓ [4. Publish to RabbitMQ]
+RabbitMQ (Exchange: webhook.events, Type: Topic)
+    ↓ [Routing Key: webhook.client.{subscriberClientId}]
+    ↓ [Queue: queue.client.{subscriberClientId}]
+Subscriber Client B Backend (Node.js Consumer)
+    ↓ [Decrypt with clientPrivateKey]
+    ↓ [Socket.IO emit: webhook_message_received]
+Subscriber Client B Frontend (React)
+    ↓ [WebSocketContext listener]
+    ↓ [Display in ChatPage with 📬 icon]
+✅ User sees message in real-time!
+```
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -825,7 +1111,18 @@ sequenceDiagram
 - Key: `subscriptions:{eventType}` - Cache subscripții per tip eveniment
 - Key: `event_types:{clientID}` - Cache tipuri de evenimente publicate
 
-#### RabbitMQ Queue Structure (Hybrid Architecture):
+#### RabbitMQ Queue Structure (Arhitectură Implementată)
+
+**⚠️ NOTĂ:** Structura descrisă mai jos reprezintă **arhitectura planificată inițial**. Implementarea actuală folosește o arhitectură mai simplă descrisă în secțiunea "Arhitectură Implementată" de mai sus.
+
+**Arhitectură Reală (Februarie 2026):**
+- **Exchange:** `webhook.events` (Topic Exchange)
+- **Routing Key:** `webhook.client.{clientId}`
+- **Queue per client:** `queue.client.{clientId}`
+- **Consumer:** wh-client-backend (Node.js)
+- **Delivery:** Socket.IO real-time către frontend
+
+**Arhitectură Planificată Inițial (Pentru referință):**
 
 **Event Ingestion Layer:**
 - **Exchange**: `events.topic` (topic exchange)
@@ -856,3 +1153,103 @@ Publisher → events.topic → events.order.created → Event Dispatcher
                         Notification Workers → Webhook endpoints
 ```
 
+---
+
+## Rezumat Status Implementare Arhitectură
+
+**Ultima actualizare:** 7 februarie 2026
+
+### ✅ Componente Complet Implementate (Production Ready)
+
+| Componentă | Port(uri) | Tehnologie | Status |
+|------------|-----------|------------|--------|
+| **wh-svc-gateway** | 8081 | Spring Cloud Gateway | ✅ LIVE |
+| **wh-svc-manager** | 8082 | Spring Boot 3.x | ✅ LIVE |
+| **wh-svc-security** | 8080 | Spring Boot 3.x | ✅ LIVE |
+| **wh-client-backend** | 3000-3002 | Node.js 22 + Express | ✅ LIVE |
+| **wh-client-frontend** | 5171-5173 | React 19 + Vite | ✅ LIVE |
+| **PostgreSQL** | 5432 | PostgreSQL 16 | ✅ LIVE |
+| **Redis** | 6379 | Redis 7 | ✅ LIVE |
+| **RabbitMQ** | 5672, 15672 | RabbitMQ 3.13 | ✅ LIVE |
+
+### ✅ Fluxuri Funcționale Implementate
+
+| Flux | Descriere | Status | Data |
+|------|-----------|--------|------|
+| **Enrollment 2-Phase** | Înregistrare clienți cu schimb chei RSA | ✅ Complet | Ian 2026 |
+| **Event Registration** | Înregistrare tipuri evenimente | ✅ Complet | Ian 2026 |
+| **Event Subscription** | Abonare la evenimente alți clienți | ✅ Complet | Ian 2026 |
+| **Event Publishing** | Publicare mesaje webhook criptate | ✅ Complet | Feb 2026 |
+| **RabbitMQ Distribution** | Distribuire prin Topic Exchange | ✅ Complet | Feb 2026 |
+| **Real-time Delivery** | Livrare prin Socket.IO în UI | ✅ Complet | Feb 2026 |
+
+### ⏳ Features Parțial Implementate
+
+| Feature | Status Actual | Planificat |
+|---------|---------------|------------|
+| **Observabilitate** | Health checks + logging basic | Q1 2026: Prometheus + Grafana |
+| **Retry Logic** | Circuit breakers în Gateway | Q1 2026: Exponential backoff |
+| **Dead Letter Queue** | Nu implementat | Q1 2026: DLQ pentru failed messages |
+| **Distributed Tracing** | Nu implementat | Q2 2026: OpenTelemetry + Jaeger |
+
+### 📋 Componente Planificate (Nu Implementate)
+
+| Componentă | Descriere | Prioritate | Termen |
+|------------|-----------|------------|--------|
+| **Event Dispatcher Workers** | HTTP delivery către webhook endpoints | Medie | Q2 2026 |
+| **Notification Service** | Alerting pentru eșecuri | Scăzută | Q2 2026 |
+| **RabbitMQ Cluster HA** | High availability cu 3 noduri | Ridicată | Q2 2026 |
+| **ELK Stack** | Centralizare loguri | Medie | Q2 2026 |
+| **Kubernetes** | Orchestrare producție | Ridicată | Q2 2026 |
+
+### 🎯 Diferențe Arhitectură Planificată vs Implementată
+
+**Planificat inițial:**
+- Event Ingestion Service separat
+- Event Dispatcher Workers pentru HTTP delivery
+- Notification Service pentru alerting
+- Arhitectură hibridă cu 2 layere RabbitMQ
+
+**Implementat actual:**
+- Event publishing integrat în `wh-svc-manager`
+- Delivery prin Socket.IO real-time (nu HTTP webhooks)
+- RabbitMQ Topic Exchange simplu
+- Alerting prin toast notifications în UI
+
+**Motivație schimbări:**
+- Simplitate implementare pentru MVP
+- Real-time delivery superior pentru UX
+- Reducere complexitate infrastructură
+- Time-to-market mai rapid
+
+### 📊 Metrici Arhitectură Actuală
+
+**Scalabilitate:**
+- ✅ Microservicii independente (pot scala separat)
+- ✅ RabbitMQ queue per client (izolare)
+- ⚠️ Single instance RabbitMQ (SPOF)
+- ⚠️ Single instance PostgreSQL (SPOF)
+
+**Performanță:**
+- ✅ Redis cache pentru chei criptografice
+- ✅ Connection pooling (HikariCP, RabbitMQ)
+- ✅ Latență medie < 500ms end-to-end
+- ✅ WebSocket pentru zero latency în UI
+
+**Securitate:**
+- ✅ Criptare end-to-end (RSA-2048 + AES-256-GCM)
+- ✅ Rate limiting în Gateway
+- ✅ Circuit breakers pentru resilience
+- ⚠️ Secrets în .env (Vault planificat)
+
+**Observabilitate:**
+- ✅ Logging structured în toate serviciile
+- ✅ Health checks (Actuator + custom)
+- ⚠️ Metrici basic (Prometheus planificat)
+- ❌ Distributed tracing (OpenTelemetry planificat)
+
+---
+
+**Document menținut de:** Engineering Team  
+**Próxima actualizare:** Martie 2026 (după Q1 features)  
+**Feedback:** Pentru sugestii de îmbunătățire arhitectură, creați issue în repo

@@ -149,7 +149,7 @@ sequenceDiagram
     MGR->>DB: INSERT event_types<br/>(eventType, eventSchema, eventDescription)
     DB-->>MGR: EventType saved
     
-    MGR-->>GW: 201 Created {eventId, clientId, eventType, status}
+    MGR-->>GW: 201 Created (eventId, clientId, eventType, status)
     GW-->>BE: Response
     BE-->>FE: Success + Reload events
 ```
@@ -324,7 +324,7 @@ wh-svc-docs/docs/DocumentatieTehnica/Componente sistem/webhook-manager-service/
    - Preview schema înainte de salvare
 
 2. **Editare Evenimente**
-   - PUT /api/v1/event-types/{eventId}
+   - PUT /api/v1/event-types/&#123;eventId&#125;
    - Modal similar cu creare
 
 3. **Ștergere Evenimente**

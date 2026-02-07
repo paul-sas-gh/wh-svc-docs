@@ -553,7 +553,7 @@ public ResponseEntity<ErrorResponse> handleDuplicateEventType(DuplicateEventType
 - [x] API documentat cu OpenAPI/Swagger ✅
 - [x] Logging complet pentru debugging (INFO/DEBUG/WARN/ERROR) ✅
 - [x] Exception handling consistent (GlobalExceptionHandler) ✅
-- [x] Performanță: <200ms pentru GET (cu cache hit <50ms) ✅
+- [x] Performanță: &lt;200ms pentru GET (cu cache hit &lt;50ms) ✅
 - [x] **BONUS**: Error handling pentru 400/404/409/500 cu mesaje descriptive ✅
 
 **Status Final**: ✅ **TOATE CRITERIILE ÎNDEPLINITE** - Proiect gata pentru producție!

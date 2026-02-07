@@ -95,7 +95,7 @@ CREATE TABLE event_types (
 
 ### Redis Cache
 
-**Pattern chei**: `event_types:client:{clientId}`
+**Pattern chei**: `event_types:client: &#123; clientId $#125;`
 
 **Valoare**: Lista de EventType serializată JSON
 ```json
@@ -195,7 +195,7 @@ Content-Type: application/json
 }
 ```
 
-### GET /api/v1/event-types/client/{clientId}
+### GET /api/v1/event-types/client/&#123;clientId&#125;
 
 Returnează toate tipurile de evenimente pentru un client.
 
@@ -328,7 +328,7 @@ sequenceDiagram
     participant Redis
     participant DB
 
-    Client->>Gateway: POST /api/v1/event-types<br/>{clientId, encryptedData}
+    Client->>Gateway: POST /api/v1/event-types<br/>(clientId, encryptedData)
     Gateway->>Manager: Forward request
     
     Manager->>Redis: getClientKeys(clientId)
@@ -388,7 +388,7 @@ sequenceDiagram
    - Timestamp `created_at` automat
 
 7. **Invalidare Cache** (Cache)
-   - DELETE `event_types:client:{clientId}`
+   - DELETE `event_types:client:(clientId)`
    - Cache se reîncarcă la următorul GET
 
 8. **Response** (Controller)
@@ -411,7 +411,7 @@ Toate datele sensibile sunt criptate în transit:
 
 ### Storage Chei în Redis
 
-**Key Pattern**: `client:keys:{clientId}`
+**Key Pattern**: `client:keys:(clientId)`
 
 **Valoare**:
 ```json
@@ -447,14 +447,14 @@ Toate datele sensibile sunt criptate în transit:
 
 ### Exception Handling
 
-| Exception | HTTP Status | Message Example |
-|-----------|-------------|-----------------|
-| `ClientNotFoundException` | 404 | Client not found: {uuid} |
+| Exception | HTTP Status | Message Example                               |
+|-----------|-------------|-----------------------------------------------|
+| `ClientNotFoundException` | 404 | Client not found: &#123;uuid&#125;            |
 | `DuplicateEventTypeException` | 409 | Event type 'order.created' already registered |
-| `InvalidEventSchemaException` | 400 | Invalid JSON format: ... |
-| `HttpMessageNotReadableException` | 400 | Invalid request payload: Malformed JSON |
-| `MethodArgumentNotValidException` | 400 | Validation failed: encryptedData is required |
-| Generic `Exception` | 500 | An unexpected error occurred |
+| `InvalidEventSchemaException` | 400 | Invalid JSON format: ...                      |
+| `HttpMessageNotReadableException` | 400 | Invalid request payload: Malformed JSON       |
+| `MethodArgumentNotValidException` | 400 | Validation failed: encryptedData is required  |
+| Generic `Exception` | 500 | An unexpected error occurred                  |
 
 ## Cache Strategy
 
@@ -594,7 +594,7 @@ Invoke-RestMethod -Uri "http://localhost:8082/api/v1/event-types/client/$clientI
 - ❌ Nu există rate limiting per client
 
 ### Viitoare Îmbunătățiri
-- [ ] Update event type (PUT /api/v1/event-types/{eventId})
+- [ ] Update event type (PUT /api/v1/event-types/&#123;eventId&#125;)
 - [ ] Delete/Deprecate event type (DELETE sau PATCH status)
 - [ ] Paginare și sortare pentru GET
 - [ ] Filtrare după status
@@ -605,9 +605,8 @@ Invoke-RestMethod -Uri "http://localhost:8082/api/v1/event-types/client/$clientI
 ## Referințe
 
 ### Documente Related
-- [Event Registration Implementation Plan](../Rapoarte%20de%20implementare/Workflows/Event%20Registration/event-registration-implementation.md)
-- [Client Enrollment Flow](./client-enrollment.md)
-- [Security Service Integration](../security-service/README.md)
+- [Event Registration Implementation Plan](../../Rapoarte de implementare/Workflows/Event Registration/event-registration-implementation.md)
+- [Security Service Integration](../SecurityService/README.md)
 
 ### API Documentation
 - Swagger UI: http://localhost:8082/swagger-ui.html

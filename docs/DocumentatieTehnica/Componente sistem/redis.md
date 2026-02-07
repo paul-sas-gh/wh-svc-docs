@@ -58,7 +58,7 @@ Redis servește ca **layer de caching în-memory** pentru optimizarea performan�
 GET /api/events/types?clientId=ABC
   ↓
 1. Check Redis cache
-   ├─ HIT: Return cached data (<1ms)
+   ├─ HIT: Return cached data (&lt;1ms)
    └─ MISS: 
       ├─ Query PostgreSQL (~10-50ms)
       ├─ Store in Redis (TTL=1h)
@@ -77,7 +77,7 @@ POST /api/events/register
 
 **Motivație**:
 - ✅ Operațiuni read-heavy: fiecare eveniment publicat necesită validare împotriva tipurilor înregistrate
-- ✅ Performance: Redis <1ms vs PostgreSQL ~10-50ms
+- ✅ Performance: Redis &lt; 1ms vs PostgreSQL ~10-50ms
 - ✅ Scalabilitate: Reduce load pe PostgreSQL cu 99%+ pentru query-uri repetate
 - ✅ Distributed: Cache partajat între multiple instanțe ale serviciului
 
@@ -228,7 +228,7 @@ Examples:
 ```
 
 **2. Serialization Strategy**
-- JSON pentru date complexe (List<EventType>)
+- JSON pentru date complexe (List&lt;EventType&gt;&lt;)
 - String pentru date simple (single values)
 - Configurare Jackson pentru consistency cu PostgreSQL
 

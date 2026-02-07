@@ -77,7 +77,7 @@ Pentru a începe rapid cu proiectul:
 
 1. **[Plan de Proiect](./PlanDeProiect/obiective.md)** - Obiective, tehnologii, riscuri
 2. **[Arhitectura](./PlanDeProiect/arhitectura.md)** - Design și pattern-uri arhitecturale
-3. **[Implementare](./PlanDeProiect/implementare.md)** - Ghid de implementare
+
 
 ### 🔧 Documentație Tehnică
 
@@ -132,7 +132,6 @@ Security (orice format) → Manager (transparent) → Client (același format)
 | **Performance** | 🟢 Zero overhead procesare |
 | **Cuplare** | 🟢 Servicii complet decuplate |
 
-📄 **Detalii complete**: Vezi [Webhook Management Service - Format-Agnostic Refactoring](./DocumentatieTehnica/Componente%20sistem/webhook-management-service.md#refactoring-major-format-agnostic-key-handling)
 
 ## 🚀 Getting Started
 

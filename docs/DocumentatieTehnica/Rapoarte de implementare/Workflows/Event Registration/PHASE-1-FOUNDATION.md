@@ -1,6 +1,6 @@
 ---
 id: phase-1-foundation
-title: Phase 1: Foundation (Week 1) - Detailed Implementation Plan
+title: Phase 1 Foundation (Week 1) - Detailed Implementation Plan
 sidebar_position: 2
 ---
 
