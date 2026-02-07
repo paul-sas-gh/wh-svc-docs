@@ -46,10 +46,10 @@ const config = {
 
   markdown: {
     mermaid: true,
-    hooks:{
-      onBrokenMarkdownLinks : 'warn',
-    }
   },
+
+  // Broken links handling for Markdown
+  onBrokenMarkdownLinks: 'warn',
 
   themes: ['@docusaurus/theme-mermaid'],
 
@@ -95,6 +95,15 @@ const config = {
       colorMode: {
         respectPrefersColorScheme: true,
       },
+
+      // Include custom JavaScript for Mermaid fullscreen functionality
+      scripts: [
+        {
+          src: '/js/mermaidFullscreen.js',
+          async: true,
+        },
+      ],
+
       navbar: {
         title: 'My Site',
         logo: {

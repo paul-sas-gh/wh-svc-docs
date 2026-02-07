@@ -56,3 +56,161 @@
   max-width: 100%;
 }
 
+/* ========================================
+   Mermaid Fullscreen Functionality
+   ======================================== */
+
+/* Container pentru diagrame Mermaid cu poziționare relativă */
+/* Folosim selector de atribut pentru a prinde toate containerele Mermaid */
+[class*="docusaurus-mermaid-container"] {
+  position: relative;
+  margin: 2rem 0;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  padding: 1rem;
+  background: var(--ifm-background-surface-color);
+}
+
+/* Buton fullscreen în colțul dreapta sus */
+.mermaid-fullscreen-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--ifm-color-primary);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.mermaid-fullscreen-btn:hover {
+  background: var(--ifm-color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mermaid-fullscreen-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mermaid-fullscreen-btn span {
+  font-size: 13px;
+}
+
+/* Overlay fullscreen */
+.mermaid-fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Conținut fullscreen */
+.mermaid-fullscreen-content {
+  position: relative;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow: auto;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='dark'] .mermaid-fullscreen-content {
+  background: var(--ifm-background-color);
+}
+
+/* Buton de închidere în fullscreen */
+.mermaid-fullscreen-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #dc3545;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mermaid-fullscreen-close:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Ajustare dimensiune diagramă în fullscreen */
+.mermaid-fullscreen-content svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Helper text */
+.mermaid-fullscreen-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+/* Responsive pentru mobile */
+@media (max-width: 768px) {
+  .mermaid-fullscreen-btn span {
+    display: none;
+  }
+
+  .mermaid-fullscreen-btn {
+    padding: 8px;
+  }
+
+  .mermaid-fullscreen-content {
+    padding: 1rem;
+  }
+
+  .mermaid-fullscreen-hint {
+    font-size: 12px;
+  }
+}

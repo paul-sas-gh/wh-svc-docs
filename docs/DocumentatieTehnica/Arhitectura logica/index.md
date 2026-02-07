@@ -7,6 +7,12 @@
 
 ## 📊 Diagrame Disponibile
 
+```mermaid
+   flowchart TD
+       A[1. Arhitectură Servicii] --> B[2. Flux End-to-End Publicare Mesaj]
+       
+```
+
 ### 1. [Arhitectură Servicii (Implementare Reală)](./diagrama-arhitectura-servicii.md)
 
 **Status:** ✅ Implementat  
